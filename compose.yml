@@ -1,0 +1,35 @@
+services:
+  server:
+    build: .
+    command: uvicorn server:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+
+    ports:
+      - "8000:8000"
+
+    environment:
+      DATABASE_NAME: /data/telemetry.db
+      CPU_WARNING: "80"
+      CPU_CRITICAL: "90"
+      MEMORY_WARNING: "80"
+      MEMORY_CRITICAL: "90"
+      DISK_WARNING: "80"
+      DISK_CRITICAL: "90"
+
+    volumes:
+      - telemetry_data:/data
+
+  agent:
+    build: .
+    command: python agent.py
+    restart: unless-stopped
+
+    depends_on:
+      - server
+
+    environment:
+      SERVER_URL: http://server:8000/metrics
+      COLLECTION_INTERVAL: "5"
+
+volumes:
+  telemetry_data:
